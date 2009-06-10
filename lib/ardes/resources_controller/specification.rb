@@ -11,8 +11,8 @@ module Ardes#:nodoc:
     # 2. finding an enclosing resource, given a controller object
     #
     class Specification
-      attr_reader :name, :source, :klass, :key, :name_prefix, :segment, :find
-      attr_accessor :as
+      attr_reader :name, :source, :klass, :key, :segment, :find
+      attr_accessor :as, :name_prefix
       
       # factory for Specification and SingletonSpecification
       #

@@ -109,6 +109,7 @@ module Ardes#:nodoc:
       def form_for_resource_options(resource, options)
         returning options.dup do |options|
           options[:html] ||= {}
+          options[:html][:id] ||= resource.class.name.tableize + '_form'
           options[:html][:method] ||= resource.new_record? ? :post : :put
           args = options[:url_options] ? [options.delete(:url_options)] : []
           options[:url] ||= if resource.new_record?

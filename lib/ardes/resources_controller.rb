@@ -491,6 +491,10 @@ module Ardes#:nodoc:
       mixin.extend(IncludeActions) unless mixin.respond_to?(:include_actions)
       mixin.include_actions(self, options)
     end
+
+    def default_enclosing_resource(*resources)
+      write_inheritable_attribute(:default_enclosing_resources, resources)
+    end
   
   private
     def load_enclosing_resources_filter_exists?
@@ -525,6 +529,10 @@ module Ardes#:nodoc:
           ensure_sane_wildcard if name == '*'
           specifications << (name.to_s =~ /^(\*|\?(.*))$/ ? name.to_s : Specification.new(name, options, &block))
         end
+      end
+
+      def default_enclosing_resources(*names)
+        write_inheritable_attribute(:default_enclosing_resources, names)
       end
       
       # return the class resource_specification
@@ -732,6 +740,14 @@ module Ardes#:nodoc:
               req.last[1] = false if segment.is_a?(::ActionController::Routing::DynamicSegment)
             end
           end
+
+          if defaults = self.class.read_inheritable_attribute(:default_enclosing_resources)
+            defaults.reverse.each do |default|
+              unless req.any?{|r| r[1].to_s == default.to_s }
+                req.unshift([default.to_s, false, true])
+              end
+            end
+          end
         end
       rescue MissingSegment
         # fallback: construct enclosing names from param ids
@@ -755,9 +771,10 @@ module Ardes#:nodoc:
       # Optionally takes a variable name to set the instance variable as (for polymorphic use)
       def load_wildcard(as = nil)
         route_enclosing_names[enclosing_resources.size] or ResourcesController.raise_resource_mismatch(self)
-        segment, singleton = *route_enclosing_names[enclosing_resources.size]
+        segment, singleton, default = *route_enclosing_names[enclosing_resources.size]
         if resource_specification_map[segment]
           spec = resource_specification_map[segment]
+          spec = returning(spec.dup) {|s| s.name_prefix = '' } if default
           spec = returning(spec.dup) {|s| s.as = as} if as
         else
           spec = Specification.new(singleton ? segment : segment.singularize, :singleton => singleton, :as => as)
